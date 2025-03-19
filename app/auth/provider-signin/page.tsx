@@ -4,126 +4,124 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Calendar } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { CalendarCheck, Store } from 'lucide-react';
+import { providerSupabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { Manrope } from 'next/font/google';
+
+const manrope = Manrope({
+  subsets: ['latin'],
+  weight: ['200', '300', '400', '500', '600', '700', '800'],
+});
 
 export default function ProviderLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data: { user }, error: signInError } = await providerSupabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) {
-        throw error;
+      if (signInError) throw signInError;
+
+      // Verify if this is a provider account
+      const { data: providerData, error: providerError } = await providerSupabase
+        .from('provider_profiles')
+        .select('*')
+        .eq('id', user?.id)
+        .single();
+
+      if (providerError || !providerData) {
+        throw new Error('This account is not registered as a service provider');
       }
 
       toast.success('Signed in successfully');
       router.push('/providers/dashboard');
       router.refresh();
-    } catch (error) {
-      toast.error('Error signing in');
+    } catch (error: any) {
       console.error('Error:', error);
+      setError(error.message);
+      toast.error(error.message || 'Error signing in');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-white to-purple-500/5 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md mt-20">
-        <Link href="/" className="flex justify-center items-center group">
-          <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-purple-500/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <Calendar className="relative h-12 w-12 text-primary transform group-hover:scale-110 transition-transform duration-300" />
-          </div>
-          <span className="ml-3 text-2xl tracking-tight text-gray-900">
-            <span className="font-aeonik-medium">Plan</span>
-            <span className="font-aeonik-bold text-primary">Smart</span>
-          </span>
-        </Link>
-        <div className="flex items-center justify-center mt-8 space-x-2">
-          <Store className="h-6 w-6 text-primary" />
-          <h2 className="text-center text-2xl font-aeonik-medium text-gray-900">
-            Service Provider Portal
-          </h2>
-        </div>
-        <h2 className="mt-4 text-center text-4xl font-aeonik-bold text-gray-900 tracking-tight">
-          Welcome back
-        </h2>
-        <p className="mt-3 text-center text-lg font-aeonik text-gray-600">
-          New to PlanSmart?{' '}
-          <Link href="/auth/provider-signup" className="font-aeonik-medium text-primary hover:text-primary/90 transition-colors">
-            Register your business
+    <div className={`min-h-screen flex flex-col justify-center ${manrope.className} bg-gray-50`}>
+      <div className="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          {/* Logo Section */}
+          <Link href="/" className="flex justify-center items-center group mb-12">
+            <div className="relative">
+              <CalendarCheck className="h-12 w-12 text-[#f08b8b] transform group-hover:scale-110 transition-transform duration-300" />
+            </div>
+            <span className="ml-3 text-2xl tracking-tight text-gray-900">
+              <span className="font-bold">Plan</span>
+              <span className="text-[#f08b8b]">Smart</span>
+            </span>
           </Link>
-        </p>
-      </div>
 
-      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white/70 backdrop-blur-xl py-10 px-8 shadow-xl rounded-2xl sm:px-12 border border-white/20">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <label htmlFor="email" className="block text-sm font-aeonik-medium text-gray-700">
-                Email address
-              </label>
-              <div className="mt-1.5">
+          {/* Title Section */}
+          <div className="flex items-center justify-center mb-6 space-x-2">
+            <Store className="h-6 w-6 text-[#f08b8b]" />
+            <h2 className="text-2xl font-semibold text-gray-900">Service Provider Portal</h2>
+          </div>
+          <h2 className="text-center text-3xl font-bold mb-3 text-gray-900">Welcome back</h2>
+          <p className="text-center text-lg text-gray-600 mb-8">
+            New to PlanSmart?{' '}
+            <Link href="/auth/provider-signup" className="text-[#f08b8b] hover:text-[#d67676]">
+              Register your business
+            </Link>
+          </p>
+
+          {/* Form Card */}
+          <div className="bg-white p-8 sm:p-10 shadow-lg rounded-xl border border-gray-100">
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              {error && <div className="p-4 text-red-600 bg-red-50/50 backdrop-blur-sm rounded-xl">{error}</div>}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Email</label>
                 <input
-                  id="email"
-                  name="email"
                   type="email"
-                  autoComplete="email"
-                  required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-xl font-aeonik text-gray-900 placeholder:text-gray-400
-                    transition-colors duration-200 bg-white/80
-                    focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  required
+                  className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-[#f08b8b] focus:border-[#f08b8b] bg-white/50 backdrop-blur-sm"
                   placeholder="Enter your email"
                 />
               </div>
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-aeonik-medium text-gray-700">
-                Password
-              </label>
-              <div className="mt-1.5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Password</label>
                 <input
-                  id="password"
-                  name="password"
                   type="password"
-                  autoComplete="current-password"
-                  required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-xl font-aeonik text-gray-900 placeholder:text-gray-400
-                    transition-colors duration-200 bg-white/80
-                    focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  required
+                  className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-[#f08b8b] focus:border-[#f08b8b] bg-white/50 backdrop-blur-sm"
                   placeholder="Enter your password"
                 />
               </div>
-            </div>
-
-            <div>
-              <Button 
-                type="submit" 
-                className="w-full py-6 text-lg bg-gradient-to-r from-primary to-purple-500 hover:from-primary/95 hover:to-purple-500/95 shadow-xl hover:shadow-primary/25"
-                disabled={loading}
-              >
-                {loading ? 'Signing in...' : 'Sign in'}
-              </Button>
-            </div>
-          </form>
+              <div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-white bg-[#f08b8b] hover:bg-[#d67676] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#f08b8b] transition-colors duration-200"
+                >
+                  {loading ? 'Signing in...' : 'Sign in'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>

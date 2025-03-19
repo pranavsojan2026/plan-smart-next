@@ -5,8 +5,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { CalendarCheck } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { userSupabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { Manrope } from 'next/font/google';
+
+const manrope = Manrope({
+  subsets: ['latin'],
+  weight: ['200', '300', '400', '500', '600', '700', '800'],
+});
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -21,21 +27,18 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // Sign in with persistent session
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      const { data, error: signInError } = await userSupabase.auth.signInWithPassword({
         email,
         password
       });
 
       if (signInError) throw signInError;
 
-      // Set up session persistence in local storage
       const {
         data: { session },
-      } = await supabase.auth.getSession();
+      } = await userSupabase.auth.getSession();
 
       if (session) {
-        // Store session in local storage
         localStorage.setItem('supabase.auth.token', session.access_token);
       }
 
@@ -67,57 +70,69 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center bg-gradient-to-b from-gray-50 to-white py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md mt-20">
-        <Link href="/" className="flex justify-center items-center group">
-          <CalendarCheck className="h-12 w-12 text-primary group-hover:scale-110 transition-transform duration-300" />
-          <span className="ml-3 text-2xl tracking-tight text-gray-900">
-            <span className="font-bold">Plan</span>
-            <span className="text-primary">Smart</span>
-          </span>
-        </Link>
-        <h2 className="mt-8 text-center text-4xl font-bold text-gray-900 tracking-tight">Welcome back</h2>
-        <p className="mt-3 text-center text-lg text-gray-600">
-          Don't have an account? <Link href="/auth/user-signup" className="text-primary hover:underline">Sign up</Link>
-        </p>
-      </div>
-      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white p-10 shadow-xl rounded-2xl">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            {error && <div className="p-4 text-red-600 bg-red-50 rounded-xl">{error}</div>}
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-primary focus:border-primary"
-                placeholder="Enter your email"
-              />
+    <div className={`min-h-screen flex flex-col justify-center ${manrope.className} bg-gray-50`}>
+      <div className="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          {/* Logo Section */}
+          <Link href="/" className="flex justify-center items-center group mb-12">
+            <div className="relative">
+              <CalendarCheck className="h-12 w-12 text-[#f08b8b] transform group-hover:scale-110 transition-transform duration-300" />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-primary focus:border-primary"
-                placeholder="Enter your password"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="text-sm">
-                <Link href="/forgot-password" className="text-primary hover:underline">Forgot password?</Link>
+            <span className="ml-3 text-2xl tracking-tight text-gray-900">
+              <span className="font-bold">Plan</span>
+              <span className="text-[#f08b8b]">Smart</span>
+            </span>
+          </Link>
+
+          {/* Title Section */}
+          <h2 className="text-center text-4xl font-bold mb-3 text-gray-900">
+            Welcome back
+          </h2>
+          <p className="text-center text-lg text-gray-600 mb-8">
+            Don't have an account? <Link href="/auth/user-signup" className="text-[#f08b8b] hover:text-[#d67676]">Sign up</Link>
+          </p>
+
+          {/* Form Card */}
+          <div className="bg-white p-8 sm:p-10 shadow-lg rounded-xl border border-gray-100">
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              {error && <div className="p-4 text-red-600 bg-red-50/50 backdrop-blur-sm rounded-xl">{error}</div>}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-[#f08b8b] focus:border-[#f08b8b] bg-white/50 backdrop-blur-sm"
+                  placeholder="Enter your email"
+                />
               </div>
-            </div>
-            <div>
-              <Button type="submit" className="w-full py-4 text-lg bg-primary text-white rounded-xl" disabled={loading}>
-                {loading ? 'Signing in...' : 'Sign in'}
-              </Button>
-            </div>
-          </form>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Password</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-[#f08b8b] focus:border-[#f08b8b] bg-white/50 backdrop-blur-sm"
+                  placeholder="Enter your password"
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="text-sm">
+                  <Link href="/forgot-password" className="text-[#f08b8b] hover:underline">Forgot password?</Link>
+                </div>
+              </div>
+              <div>
+                <button
+                  type="submit"
+                  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-white bg-[#f08b8b] hover:bg-[#d67676] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#f08b8b] transition-colors duration-200"
+                >
+                  Sign in
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>

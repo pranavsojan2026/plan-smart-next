@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from "@/lib/supabase";
+import { userSupabase } from '@/lib/supabase';
 import { Plus, Save, DollarSign, Calendar, Pencil, Receipt } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
@@ -65,7 +65,7 @@ export function BudgetTrackerPanel() {
   }, []);
 
   useEffect(() => {
-    const channel = supabase
+    const channel = userSupabase
       .channel('budget-changes')
       .on(
         'postgres_changes',
@@ -82,14 +82,14 @@ export function BudgetTrackerPanel() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      userSupabase.removeChannel(channel);
     };
   }, []);
 
   // Add this function to create default categories
   const createDefaultCategories = async (userId: string) => {
     try {
-      const { data: existingCategories, error: fetchError } = await supabase
+      const { data: existingCategories, error: fetchError } = await userSupabase
         .from('budget_categories')
         .select('name')
         .eq('user_id', userId);
@@ -102,7 +102,7 @@ export function BudgetTrackerPanel() {
       );
 
       if (missingCategories.length > 0) {
-        const { error: insertError } = await supabase
+        const { error: insertError } = await userSupabase
           .from('budget_categories')
           .insert(
             missingCategories.map(category => ({
@@ -123,14 +123,14 @@ export function BudgetTrackerPanel() {
   // Modify the fetchBudgetData function
   const fetchBudgetData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await userSupabase.auth.getUser();
       if (!user) return;
 
       // Create default categories if they don't exist
       await createDefaultCategories(user.id);
 
       // Fetch categories
-      const { data: categoriesData, error: categoriesError } = await supabase
+      const { data: categoriesData, error: categoriesError } = await userSupabase
         .from('budget_categories')
         .select('*')
         .eq('user_id', user.id)
@@ -140,7 +140,7 @@ export function BudgetTrackerPanel() {
       setCategories(categoriesData || []);
 
       // Fetch expenses
-      const { data: expensesData, error: expensesError } = await supabase
+      const { data: expensesData, error: expensesError } = await userSupabase
         .from('expenses')
         .select('*')
         .eq('user_id', user.id);
@@ -154,10 +154,10 @@ export function BudgetTrackerPanel() {
 
   const handleAddExpense = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await userSupabase.auth.getUser();
       if (!user) return;
 
-      const { error } = await supabase
+      const { error } = await userSupabase
         .from('expenses')
         .insert({
           user_id: user.id,
@@ -169,7 +169,7 @@ export function BudgetTrackerPanel() {
       // Update category spent amount
       const category = categories.find(c => c.id === newExpense.category_id);
       if (category) {
-        const { error: updateError } = await supabase
+        const { error: updateError } = await userSupabase
           .from('budget_categories')
           .update({
             spent_amount: category.spent_amount + newExpense.amount
@@ -194,7 +194,7 @@ export function BudgetTrackerPanel() {
 
   const handleSaveBudget = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await userSupabase.auth.getUser();
       if (!user) return;
 
       // Show loading toast
@@ -203,7 +203,7 @@ export function BudgetTrackerPanel() {
       });
 
       // Update user settings with new total budget
-      const { error: settingsError } = await supabase
+      const { error: settingsError } = await userSupabase
         .from('user_settings')
         .upsert({
           user_id: user.id,
@@ -221,7 +221,7 @@ export function BudgetTrackerPanel() {
           ? (newTotalBudget * defaultCategory.percentage) / 100
           : category.allocated_amount;
 
-        return supabase
+        return userSupabase
           .from('budget_categories')
           .update({
             allocated_amount: allocatedAmount,
@@ -262,7 +262,7 @@ export function BudgetTrackerPanel() {
     if (!editingExpense) return;
     
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await userSupabase.auth.getUser();
       if (!user) return;
 
       // Get the old category and amount
@@ -270,7 +270,7 @@ export function BudgetTrackerPanel() {
       const oldCategory = categories.find(c => c.id === oldExpense?.category_id);
       
       // Update the expense
-      const { error: updateError } = await supabase
+      const { error: updateError } = await userSupabase
         .from('expenses')
         .update({
           category_id: editingExpense.category_id,
@@ -284,7 +284,7 @@ export function BudgetTrackerPanel() {
 
       // Update old category spent amount
       if (oldCategory) {
-        await supabase
+        await userSupabase
           .from('budget_categories')
           .update({
             spent_amount: oldCategory.spent_amount - (oldExpense?.amount || 0)
@@ -295,7 +295,7 @@ export function BudgetTrackerPanel() {
       // Update new category spent amount
       const newCategory = categories.find(c => c.id === editingExpense.category_id);
       if (newCategory) {
-        await supabase
+        await userSupabase
           .from('budget_categories')
           .update({
             spent_amount: newCategory.spent_amount + editingExpense.amount
@@ -313,21 +313,21 @@ export function BudgetTrackerPanel() {
 
   const handleResetBudget = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await userSupabase.auth.getUser();
       if (!user) return;
 
       const loadingToast = toast.loading("Resetting budget data...");
 
       // Reset all categories spent amounts to 0
       const resetCategoryPromises = categories.map(category =>
-        supabase
+        userSupabase
           .from('budget_categories')
           .update({ spent_amount: 0 })
           .eq('id', category.id)
       );
 
       // Delete all expenses
-      const { error: deleteError } = await supabase
+      const { error: deleteError } = await userSupabase
         .from('expenses')
         .delete()
         .eq('user_id', user.id);

@@ -5,8 +5,14 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { CalendarCheck, ClipboardList } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { userSupabase } from '@/lib/supabase';
 import { toast } from 'react-hot-toast';
+import { Manrope } from 'next/font/google';
+
+const manrope = Manrope({
+  subsets: ['latin'],
+  weight: ['200', '300', '400', '500', '600', '700', '800'],
+});
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -21,7 +27,6 @@ export default function SignupPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [passwordStrength, setPasswordStrength] = useState<string>('');
   const router = useRouter();
-  const supabase = createClientComponentClient();
 
   // Validates that full name contains only letters and spaces
   const validateFullName = (name: string) => {
@@ -114,45 +119,20 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      // Sign up with Supabase
-      const { data, error: signUpError } = await supabase.auth.signUp({
+      const { data, error } = await userSupabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
           data: {
             full_name: formData.fullName,
-            role: 'event_planner',
-            status: 'active',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+            user_type: 'user'
           }
         }
       });
 
-      if (signUpError) throw signUpError;
+      if (error) throw error;
 
-      // Insert additional user data into profiles table
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([
-          {
-            id: data.user?.id,
-            full_name: formData.fullName,
-            email: formData.email,
-            role: 'event_planner',
-            status: 'active',
-            permissions: {
-              read: true,
-              write: true,
-              create_events: true,
-              manage_events: true
-            }
-          }
-        ]);
-
-      if (profileError) throw profileError;
-
-      toast.success("Account created successfully! Please check your email for verification.");
+      toast.success('Account created successfully! Please check your email to verify your account.');
       router.push('/auth/user-signin');
     } catch (error: any) {
       console.error('Signup error:', error);
@@ -245,28 +225,35 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md mt-20">
-        <Link href="/" className="flex justify-center items-center group">
-          <CalendarCheck className="h-12 w-12 text-primary" />
+    <div className={`min-h-screen flex flex-col ${manrope.className} bg-gray-50`}>
+      <div className="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          {/* Logo Section */}
+          <Link href="/" className="flex justify-center items-center group mb-12">
+            <div className="relative">
+              <CalendarCheck className="h-12 w-12 text-[#f08b8b] transform group-hover:scale-110 transition-transform duration-300" />
+            </div>
           <span className="ml-3 text-2xl tracking-tight text-gray-900">
-            <span className="font-semibold">Plan</span>
-            <span className="font-bold text-primary">Smart</span>
+              <span className="font-bold">Plan</span>
+              <span className="text-[#f08b8b]">Smart</span>
           </span>
         </Link>
-        <div className="flex items-center justify-center mt-8 space-x-2">
-          <ClipboardList className="h-6 w-6 text-primary" />
+
+          {/* Title Section */}
+          <div className="flex items-center justify-center mb-6 space-x-2">
+            <ClipboardList className="h-6 w-6 text-[#f08b8b]" />
           <h2 className="text-2xl font-semibold text-gray-900">Event Planner Portal</h2>
         </div>
-        <h2 className="mt-4 text-center text-3xl font-bold text-gray-900">Register as an Event Planner</h2>
-        <p className="mt-3 text-center text-lg text-gray-600">
+          <h2 className="text-center text-3xl font-bold mb-3 text-gray-900">
+            Register as an Event Planner
+          </h2>
+          <p className="text-center text-lg text-gray-600 mb-8">
           Already have an account?{' '}
-          <Link href="/auth/user-signin" className="text-primary font-medium hover:underline">Sign in</Link>
+            <Link href="/auth/user-signin" className="text-[#f08b8b] hover:text-[#d67676]">Sign in</Link>
         </p>
-      </div>
 
-      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-10 px-8 shadow-xl rounded-lg border border-gray-200">
+          {/* Form Card */}
+          <div className="bg-white p-8 sm:p-10 shadow-lg rounded-xl border border-gray-100">
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && <div className="text-red-500 text-sm p-2 bg-red-50 rounded border border-red-200">{error}</div>}
             
@@ -350,14 +337,14 @@ export default function SignupPage() {
               )}
             </div>
 
-            <Button 
+              <button
               type="submit" 
-              className="w-full py-3 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition" 
-              disabled={loading || Object.keys(fieldErrors).length > 0}
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-white bg-[#f08b8b] hover:bg-[#d67676] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#f08b8b] transition-colors duration-200"
             >
               {loading ? 'Signing up...' : 'Sign up'}
-            </Button>
+              </button>
           </form>
+          </div>
         </div>
       </div>
     </div>

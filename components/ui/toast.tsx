@@ -3,6 +3,9 @@ import * as ToastPrimitives from "@radix-ui/react-toast"
 import { cva, type VariantProps } from "class-variance-authority"
 import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { Manrope } from "next/font/google"
+
+const manrope = Manrope({ subsets: ["latin"] })
 
 type ToastActionElement = React.ReactElement
 type ToastProps = React.ComponentPropsWithoutRef<typeof Toast> & VariantProps<typeof toastVariants>
@@ -48,7 +51,7 @@ const Toast = React.forwardRef<
   return (
     <ToastPrimitives.Root
       ref={ref}
-      className={cn(toastVariants({ variant }), className)}
+      className={cn(toastVariants({ variant }), manrope.className, className)}
       {...props}
     />
   )

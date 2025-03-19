@@ -1,14 +1,20 @@
 'use client';
 
+import { Manrope } from 'next/font/google';
 import { ArrowRight, Calendar, Camera, MapPin, Utensils } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Navbar } from '@/app/layout/navbar';
 import { Footer } from '@/app/layout/footer';
 
+const manrope = Manrope({
+  subsets: ['latin'],
+  weight: ['200', '300', '400', '500', '600', '700', '800'],
+});
+
 export default function HomePage() {
   return (
-    <div>
+    <div className={manrope.className}>
       <Navbar />
       
       <main className="min-h-screen">
@@ -20,16 +26,15 @@ export default function HomePage() {
               backgroundImage: 'url(https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&q=80)',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
-              filter: 'brightness(0.65)',
+              filter: 'brightness(0.25)',
             }}
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-black/90 to-black/50" />
           </div>
           
           <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-white">
-            <h1 className="text-5xl md:text-7xl --font-manrope font-bold mb-8 text-white leading-[1.1] animate-fade-in">
+            <h1 className="text-5xl md:text-7xl font-bold mb-8 text-white leading-[1.1] animate-fade-in">
               Plan Your Perfect <br className="hidden md:block" />
-              <span className="text-primary bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">
+              <span className="text-transparent bg-clip-text bg-[radial-gradient(circle_farthest-corner_at_10%_20%,rgba(240,139,139,1)_0%,rgba(243,252,166,1)_90%)]">
                 Event
               </span>
             </h1>
@@ -40,7 +45,7 @@ export default function HomePage() {
               <Button 
                 size="lg" 
                 variant="default" 
-                className="text-lg px-8 py-6 shadow-xl hover:scale-105 transition-transform duration-300 animate-fade-in-delay-2"
+                className="text-lg px-8 py-6 shadow-xl hover:scale-105 transition-transform duration-300 animate-fade-in-delay-2 bg-[radial-gradient(circle_farthest-corner_at_10%_20%,rgba(240,139,139,1)_0%,rgba(243,252,166,1)_90%)] hover:bg-[radial-gradient(circle_farthest-corner_at_10%_20%,rgba(240,139,139,0.9)_0%,rgba(243,252,166,0.9)_90%)] text-gray-800 border-0"
               >
                 Start Planning <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
@@ -69,8 +74,8 @@ export default function HomePage() {
                   key={index} 
                   className="bg-white p-8 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 group hover:-translate-y-1"
                 >
-                  <div className="bg-primary/5 rounded-xl p-4 w-fit mb-6 group-hover:bg-primary/10 transition-colors duration-300">
-                    <service.icon className="h-8 w-8 text-primary" />
+                  <div className="bg-gradient-to-r from-primary/10 to-fuchsia-500/10 rounded-xl p-4 w-fit mb-6 group-hover:from-primary/20 group-hover:to-fuchsia-500/20 transition-colors duration-300">
+                    <service.icon className="h-8 w-8 text-[#f08b8b]" />
                   </div>
                   <h3 className="text-xl font-semibold mb-3">{service.title}</h3>
                   <p className="text-gray-600">{service.description}</p>

@@ -3,10 +3,23 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
 import { CalendarCheck, Building2 } from 'lucide-react';
-import { getAuth, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { providerSupabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { Manrope } from 'next/font/google';
+import { PostgrestError } from '@supabase/supabase-js';
+
+const manrope = Manrope({
+  subsets: ['latin'],
+  weight: ['200', '300', '400', '500', '600', '700', '800'],
+});
+
+interface SignupError {
+  message: string;
+  details?: string;
+  hint?: string;
+  code?: string;
+}
 
 export default function ProviderSignupPage() {
   const [formData, setFormData] = useState({
@@ -17,9 +30,8 @@ export default function ProviderSignupPage() {
     confirmPassword: '',
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<SignupError | null>(null);
   const router = useRouter();
-  const auth = getAuth();
 
   // Service type options
   const serviceTypes = [
@@ -41,167 +53,251 @@ export default function ProviderSignupPage() {
     setError(null);
   };
 
+  const logError = (phase: string, error: any) => {
+    console.error(`Error during ${phase}:`, {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+      status: error.status,
+      stack: error.stack
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
-    // Validation checks
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      setLoading(false);
-      return;
-    }
-
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters long');
-      setLoading(false);
-      return;
-    }
-
     try {
-      // Create user account
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
-      );
+      // Input validation
+      if (!formData.email || !formData.password || !formData.companyName || !formData.serviceType) {
+        throw new Error('All fields are required');
+      }
 
-      // Update profile with company name
-      await updateProfile(userCredential.user, {
-        displayName: formData.companyName
+      // Step 1: Sign up
+      console.log('Starting authentication...');
+      const { data: { user }, error: authError } = await providerSupabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            company_name: formData.companyName,
+            service_type: formData.serviceType,
+            user_type: 'provider'
+          }
+        }
       });
 
-      // You might want to store additional provider data in your database here
-      // For example: service type, company details, etc.
+      if (authError) {
+        console.error('Auth error:', authError);
+        throw new Error(`Authentication failed: ${authError.message}`);
+      }
 
-      toast.success('Account created successfully');
-      router.push('/provider-dashboard');
+      if (!user?.id) {
+        throw new Error('No user ID returned from signup');
+      }
+
+      console.log('Authentication successful, user created:', { userId: user.id });
+
+      // Step 2: Create profile - with more detailed error handling
+      console.log('Attempting to create profile with data:', {
+        userId: user.id,
+        companyName: formData.companyName,
+        serviceType: formData.serviceType,
+        email: formData.email
+      });
+
+      const { data: profileData, error: profileError, status } = await providerSupabase
+        .from('provider_profiles')
+        .insert({
+          id: user.id,
+          company_name: formData.companyName,
+          service_type: formData.serviceType,
+          email: formData.email,
+          status: 'pending'
+        })
+        .select('*')
+        .single();
+
+      // Log the complete response
+      console.log('Profile creation response:', {
+        success: !!profileData,
+        error: profileError,
+        status,
+        data: profileData
+      });
+
+      if (profileError) {
+        console.error('Profile creation error details:', {
+          message: profileError.message,
+          code: profileError.code,
+          details: profileError.details,
+          hint: profileError.hint
+        });
+        throw new Error(`Profile creation failed: ${profileError.message}`);
+      }
+
+      if (!profileData) {
+        throw new Error('Profile was created but no data was returned');
+      }
+
+      console.log('Profile created successfully:', profileData);
+      toast.success('Account created successfully! Please check your email to verify your account.');
+      router.push('/auth/provider-signin');
+
     } catch (error: any) {
-      console.error('Signup error:', error);
-      setError(error.message || 'Failed to create account');
-      toast.error('Failed to create account');
+      console.error('Signup process failed with error:', {
+        error,
+        message: error.message,
+        name: error.name,
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint,
+        status: error?.status
+      });
+
+      const errorMessage = error.message || 'Failed to create account';
+      setError({
+        message: errorMessage,
+        details: error?.details || null,
+        hint: error?.hint || null,
+        code: error?.code || null
+      });
+      
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-white to-purple-500/5 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md mt-20">
-        <Link href="/" className="flex justify-center items-center group">
-          <CalendarCheck className="h-12 w-12 text-primary" />
-          <span className="ml-3 text-2xl font-bold text-gray-900">PlanSmart</span>
-        </Link>
-        <div className="flex items-center justify-center mt-8 space-x-2">
-          <Building2 className="h-6 w-6 text-primary" />
-          <h2 className="text-center text-2xl font-medium text-gray-900">Service Provider Portal</h2>
-        </div>
-        <h2 className="mt-4 text-center text-4xl font-bold text-gray-900">Register your business</h2>
-      </div>
-
-      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-10 px-8 shadow-xl rounded-2xl">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            {/* Company Name Field */}
-            <div>
-              <label htmlFor="companyName" className="block text-sm font-medium text-gray-700">Company Name</label>
-              <input
-                id="companyName"
-                name="companyName"
-                type="text"
-                required
-                value={formData.companyName}
-                onChange={handleChange}
-                className="mt-1 block w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                placeholder="Enter your company name"
-              />
+    <div className={`min-h-screen flex flex-col justify-center ${manrope.className} bg-gray-50`}>
+      <div className="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          {/* Logo Section */}
+          <Link href="/" className="flex justify-center items-center group mb-12">
+            <div className="relative">
+              <CalendarCheck className="h-12 w-12 text-[#f08b8b] transform group-hover:scale-110 transition-transform duration-300" />
             </div>
+            <span className="ml-3 text-2xl tracking-tight text-gray-900">
+              <span className="font-bold">Plan</span>
+              <span className="text-[#f08b8b]">Smart</span>
+            </span>
+          </Link>
 
-            {/* Service Type Field */}
-            <div>
-              <label htmlFor="serviceType" className="block text-sm font-medium text-gray-700">Event Planning Service</label>
-              <select
-                id="serviceType"
-                name="serviceType"
-                required
-                value={formData.serviceType}
-                onChange={handleChange}
-                className="mt-1 block w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-              >
-                <option value="" disabled>Select your service type</option>
-                {serviceTypes.map((service, index) => (
-                  <option key={index} value={service}>{service}</option>
-                ))}
-              </select>
-            </div>
+          {/* Title Section */}
+          <div className="flex items-center justify-center mb-6 space-x-2">
+            <Building2 className="h-6 w-6 text-[#f08b8b]" />
+            <h2 className="text-2xl font-semibold text-gray-900">Service Provider Portal</h2>
+          </div>
+          <h2 className="text-center text-3xl font-bold mb-3 text-gray-900">Register your business</h2>
+          <p className="text-center text-lg text-gray-600 mb-8">
+            Already have an account?{' '}
+            <Link href="/auth/provider-signin" className="text-[#f08b8b] hover:text-[#d67676]">
+              Sign in
+            </Link>
+          </p>
 
-            {/* Email Field */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                value={formData.email}
-                onChange={handleChange}
-                className="mt-1 block w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                placeholder="Enter your email"
-              />
-            </div>
-
-            {/* Password Field */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                value={formData.password}
-                onChange={handleChange}
-                className="mt-1 block w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                placeholder="Create a password"
-              />
-              <p className="mt-1 text-xs text-gray-500">Password must be at least 8 characters long</p>
-            </div>
-
-            {/* Confirm Password Field */}
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">Confirm password</label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                required
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                className="mt-1 block w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                placeholder="Confirm your password"
-              />
-              {formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                <p className="mt-1 text-xs text-red-500">Passwords do not match</p>
+          {/* Form Card */}
+          <div className="bg-white p-8 sm:p-10 shadow-lg rounded-xl border border-gray-100">
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              {error && (
+                <div className="p-4 text-red-600 bg-red-50/50 backdrop-blur-sm rounded-xl">
+                  <p className="font-medium">{error.message}</p>
+                  {error.hint && (
+                    <p className="text-sm mt-1 text-red-500">{error.hint}</p>
+                  )}
+                </div>
               )}
-            </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Company Name</label>
+                <input
+                  name="companyName"
+                  type="text"
+                  required
+                  value={formData.companyName}
+                  onChange={handleChange}
+                  className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-[#f08b8b] focus:border-[#f08b8b] bg-white/50 backdrop-blur-sm"
+                  placeholder="Enter your company name"
+                />
+              </div>
 
-            <div>
-              <Button 
-                type="submit" 
-                className="w-full py-3 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors"
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Service Type</label>
+                <select
+                  name="serviceType"
+                  required
+                  value={formData.serviceType}
+                  onChange={handleChange}
+                  className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-[#f08b8b] focus:border-[#f08b8b] bg-white/50 backdrop-blur-sm"
+                >
+                  <option value="">Select your service type</option>
+                  {serviceTypes.map((service) => (
+                    <option key={service} value={service}>{service}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Email</label>
+                <input
+                  name="email"
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-[#f08b8b] focus:border-[#f08b8b] bg-white/50 backdrop-blur-sm"
+                  placeholder="Enter your email"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Password</label>
+                <input
+                  name="password"
+                  type="password"
+                  required
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-[#f08b8b] focus:border-[#f08b8b] bg-white/50 backdrop-blur-sm"
+                  placeholder="Create a password"
+                />
+                <p className="mt-1 text-xs text-gray-500">Password must be at least 8 characters long</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Confirm Password</label>
+                <input
+                  name="confirmPassword"
+                  type="password"
+                  required
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-[#f08b8b] focus:border-[#f08b8b] bg-white/50 backdrop-blur-sm"
+                  placeholder="Confirm your password"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-white bg-[#f08b8b] hover:bg-[#d67676] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#f08b8b] transition-colors duration-200"
               >
-                Register Business
-              </Button>
-            </div>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Already have an account?{' '}
-              <Link href="/auth/provider-login" className="text-primary font-medium hover:underline">
-                Sign in
-              </Link>
-            </p>
+                {loading ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Creating account...
+                  </span>
+                ) : (
+                  'Register Business'
+                )}
+              </button>
+            </form>
           </div>
         </div>
       </div>

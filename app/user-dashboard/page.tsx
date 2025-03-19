@@ -1,6 +1,6 @@
 'use client';
 
-// Add useEffect import
+import { Manrope } from 'next/font/google';
 import { useState, useEffect } from 'react';
 import { Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -20,6 +20,11 @@ interface UserProfile {
   email: string;
   avatar_url?: string;
 }
+
+const manrope = Manrope({
+  subsets: ['latin'],
+  weight: ['200', '300', '400', '500', '600', '700', '800'],
+});
 
 export default function UserDashboardPage() {
   const [activePanel, setActivePanel] = useState('overview');
@@ -128,11 +133,10 @@ export default function UserDashboardPage() {
   };
 
   return (
-    <div className='relative min-h-screen flex'>
+    <div className={`relative min-h-screen flex ${manrope.className}`}>
       {/* Background */}
-      <div className='fixed inset-0 bg-gradient-to-br from-white via-gray-50 to-primary/5 -z-10' />
-      <div className='fixed inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent -z-10' />
-      <div className='fixed inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-purple-500/5 via-transparent to-transparent -z-10' />
+      <div className="fixed inset-0 bg-gradient-to-br from-white via-gray-50 to-[rgba(240,139,139,0.05)] -z-10" />
+      <div className="fixed inset-0 bg-[radial-gradient(circle_farthest-corner_at_10%_20%,rgba(240,139,139,0.05)_0%,rgba(243,252,166,0.05)_90%)] -z-10" />
       
       {/* Sidebar */}
       <Sidebar
@@ -144,11 +148,11 @@ export default function UserDashboardPage() {
       />
 
       {/* Main Content */}
-      <div className='flex-1 overflow-auto'>
-        <header className='flex h-14 lg:h-[60px] items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-6'>
-          <div className='flex items-center gap-2'>
-            <Clock className='h-4 w-4 text-muted-foreground' />
-            <span className='text-sm text-muted-foreground'>
+      <div className="flex-1 overflow-auto">
+        <header className="flex h-16 items-center gap-4 border-b bg-white/80 backdrop-blur-sm px-6">
+          <div className="flex items-center gap-3">
+            <Clock className="h-5 w-5 text-[#f08b8b]" />
+            <span className="text-sm text-gray-600 font-medium">
               {new Date().toLocaleDateString('en-US', {
                 weekday: 'long',
                 year: 'numeric',
@@ -158,7 +162,24 @@ export default function UserDashboardPage() {
             </span>
           </div>
         </header>
-        <main className='flex-1 p-6'>{renderPanel()}</main>
+        <main className="flex-1 p-8">
+          <div className="max-w-7xl mx-auto">
+            {activePanel === 'new-event' ? (
+              <div className="max-w-3xl mx-auto bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20">
+                <div className="p-6 border-b border-gray-100">
+                  <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-[radial-gradient(circle_farthest-corner_at_10%_20%,rgba(240,139,139,1)_0%,rgba(243,252,166,1)_90%)]">
+                    Create New Event
+                  </h2>
+                </div>
+                <NewEventForm />
+              </div>
+            ) : (
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
+                {renderPanel()}
+              </div>
+            )}
+          </div>
+        </main>
       </div>
     </div>
   );
