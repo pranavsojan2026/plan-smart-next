@@ -4,7 +4,9 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { CalendarCheck, Building2 } from 'lucide-react';
+import { Calendar } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 export default function ProviderLoginPage() {
   const [email, setEmail] = useState('');
@@ -12,15 +14,29 @@ export default function ProviderLoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    // Simulate login process
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success('Signed in successfully');
       router.push('/providers/dashboard');
-    }, 1000);
+      router.refresh();
+    } catch (error) {
+      toast.error('Error signing in');
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -29,7 +45,7 @@ export default function ProviderLoginPage() {
         <Link href="/" className="flex justify-center items-center group">
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-purple-500/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <CalendarCheck className="relative h-12 w-12 text-primary transform group-hover:scale-110 transition-transform duration-300" />
+            <Calendar className="relative h-12 w-12 text-primary transform group-hover:scale-110 transition-transform duration-300" />
           </div>
           <span className="ml-3 text-2xl tracking-tight text-gray-900">
             <span className="font-aeonik-medium">Plan</span>
@@ -37,7 +53,7 @@ export default function ProviderLoginPage() {
           </span>
         </Link>
         <div className="flex items-center justify-center mt-8 space-x-2">
-          <Building2 className="h-6 w-6 text-primary" />
+          <Store className="h-6 w-6 text-primary" />
           <h2 className="text-center text-2xl font-aeonik-medium text-gray-900">
             Service Provider Portal
           </h2>

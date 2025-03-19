@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { CalendarCheck } from 'lucide-react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 export default function LoginPage() {
@@ -14,7 +14,6 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const supabase = createClientComponentClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,10 +24,7 @@ export default function LoginPage() {
       // Sign in with persistent session
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
-        password,
-        options: {
-          persistSession: true // This ensures the session persists
-        }
+        password
       });
 
       if (signInError) throw signInError;

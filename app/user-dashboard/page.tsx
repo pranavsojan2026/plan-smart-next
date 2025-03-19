@@ -28,11 +28,19 @@ export default function UserDashboardPage() {
   const router = useRouter();
   const supabase = createClientComponentClient();
 
-  // Add this effect to fetch user data
+  // Enhance the useEffect to handle session changes
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          router.push('/auth/user-signin');
+          return;
+        }
+
+        const { user } = session;
+        
         if (user) {
           setUserProfile({
             email: user.email || '',
@@ -42,11 +50,31 @@ export default function UserDashboardPage() {
         }
       } catch (error) {
         console.error('Error fetching user profile:', error);
+        toast.error('Error loading profile');
       }
     };
 
     fetchUserProfile();
-  }, [supabase]);
+
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_OUT') {
+          router.push('/auth/user-signin');
+        } else if (session) {
+          setUserProfile({
+            email: session.user.email || '',
+            full_name: session.user.user_metadata?.full_name || '',
+            avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${session.user.email}`
+          });
+        }
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [supabase, router]);
 
   const handleSignOut = async () => {
     try {
