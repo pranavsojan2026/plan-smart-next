@@ -16,6 +16,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { Users } from 'lucide-react';
+import { Users2 } from "lucide-react";
 
 interface UserProfile {
   full_name: string;
@@ -43,7 +45,8 @@ const menuItems = [
   { id: "new-event", label: "Create New Event", icon: Plus, special: true }, // Add special flag
   { id: "overview", label: "Event Overview", icon: LayoutDashboard },
   { id: "budget", label: "Budget Tracker", icon: DollarSign },
-  { id: "recommendations", label: "Recommendations", icon: Sparkles },
+  { id: "provider", label: "Service Providers", icon: Users },
+  { id: "recommendations", label: "AI Recommendations", icon: Sparkles },
   { id: "venue", label: "Venue Visualization", icon: Building2 },
   { id: "messaging", label: "Messaging", icon: MessageSquare },
   { id: "profile", label: "Profile & Settings", icon: Settings },

@@ -14,6 +14,8 @@ import { MessagingPanel } from '@/components/panels/messaging';
 import { ProfilePanel } from '@/components/panels/profile';
 import { NewEventForm } from '@/components/panels/new-event-form';
 import { BudgetTrackerPanel } from '@/components/panels/budget-tracker';
+import { AIAssistant } from "@/components/ai-asisstant"
+import { EventProvidersList } from "@/components/panels/provider-list";
 
 interface UserProfile {
   full_name: string;
@@ -83,24 +85,75 @@ export default function UserDashboardPage() {
 
   const handleSignOut = async () => {
     try {
+      setLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) {
         throw error;
       }
       
-      // Clear any stored session data
+      // Clear all auth data
       localStorage.removeItem('supabase.auth.token');
       
-      // Redirect to sign-in page
-      router.push('/auth/user-signin');
-      router.refresh();
+      // Force a hard refresh to clear all state
+      window.location.href = '/auth/user-signin';
       
       toast.success('Signed out successfully');
     } catch (error) {
       console.error('Error signing out:', error);
       toast.error('Error signing out');
+    } finally {
+      setLoading(false);
     }
   };
+
+  // Update the useEffect to handle auth state
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          window.location.href = '/auth/user-signin';
+          return;
+        }
+
+        const { user } = session;
+        
+        if (user) {
+          setUserProfile({
+            email: user.email || '',
+            full_name: user.user_metadata?.full_name || '',
+            avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${user.email}`
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+        toast.error('Error loading profile');
+        window.location.href = '/auth/user-signin';
+      }
+    };
+
+    checkAuth();
+
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_OUT') {
+          window.location.href = '/auth/user-signin';
+        } else if (session) {
+          setUserProfile({
+            email: session.user.email || '',
+            full_name: session.user.user_metadata?.full_name || '',
+            avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${session.user.email}`
+          });
+        }
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
 
   const renderPanel = () => {
     switch (activePanel) {
@@ -115,10 +168,10 @@ export default function UserDashboardPage() {
         );
       case 'overview':
         return <EventOverviewPanel />;
-     
       case 'budget':
         return <BudgetTrackerPanel />;
-        
+      case 'provider': // Add this case
+        return <EventProvidersList />;
       case 'recommendations':
         return <ServiceRecommendationsPanel />;
       case 'venue':
@@ -181,6 +234,9 @@ export default function UserDashboardPage() {
           </div>
         </main>
       </div>
+
+      {/* Add AI Assistant */}
+      <AIAssistant />
     </div>
   );
 }

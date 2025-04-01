@@ -21,49 +21,33 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Add better error handling in the handleSubmit function
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError(null);
     setLoading(true);
-
+  
     try {
       const { data, error: signInError } = await userSupabase.auth.signInWithPassword({
         email,
         password
       });
-
-      if (signInError) throw signInError;
-
-      const {
-        data: { session },
-      } = await userSupabase.auth.getSession();
-
-      if (session) {
-        localStorage.setItem('supabase.auth.token', session.access_token);
-      }
-
-      toast.success('Signed in successfully');
-      router.push('/user-dashboard');
-      router.refresh();
-    } catch (error: any) {
-      console.error('Sign-in error:', error);
-      let errorMessage = 'Failed to sign in';
-      
-      if (error.message) {
-        switch (error.message) {
-          case 'Invalid login credentials':
-            errorMessage = 'Invalid email or password';
-            break;
-          case 'Email not confirmed':
-            errorMessage = 'Please verify your email first';
-            break;
-          default:
-            errorMessage = error.message;
+  
+      if (signInError) {
+        if (signInError.message === 'Invalid login credentials') {
+          toast.error('Invalid email or password. Please try again.');
+        } else {
+          toast.error('An error occurred during sign in. Please try again.');
         }
+        return;
       }
-      
-      setError(errorMessage);
-      toast.error(errorMessage);
+  
+      if (data?.user) {
+        toast.success('Signed in successfully');
+        router.push('/user-dashboard');
+      }
+    } catch (error) {
+      console.error('Sign in error:', error);
+      toast.error('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }

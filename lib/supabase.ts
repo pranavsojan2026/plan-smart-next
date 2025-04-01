@@ -7,10 +7,8 @@ export const userSupabase = createClientComponentClient({
 })
 
 // Client for providers (using second project)
-export const providerSupabase = createClientComponentClient({
-  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL2,
-  supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY2,
-})
+
 
 // If you need backwards compatibility, you can also export a default client
-export const supabase = userSupabase // This will help with existing code that uses the default import
+export const supabase = userSupabase 
+// This will help with existing code that uses the default import
