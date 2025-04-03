@@ -123,7 +123,6 @@ export default function Dashboard() { // Change to default export
           >
             <MessageSquare className="mr-2 h-4 w-4" />
             Messages
-            <Badge className="ml-auto bg-primary text-primary-foreground">3</Badge>
           </Button>
           <Button
             variant={activeTab === "payment" ? "default" : "ghost"}
@@ -163,23 +162,6 @@ export default function Dashboard() { // Change to default export
               {activeTab === "profile" && "Profile & Settings"}
             </h1>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="relative">
-                <Bell className="h-5 w-5" />
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
-                  3
-                </span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>New booking request</DropdownMenuItem>
-              <DropdownMenuItem>Payment received</DropdownMenuItem>
-              <DropdownMenuItem>Client message</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="rounded-full">
@@ -223,201 +205,69 @@ function Messages() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row gap-4 md:items-center justify-between">
-        <h2 className="text-2xl font-bold tracking-tight font-aeonik-medium">Messages & Notifications</h2>
+        <h2 className="text-2xl font-bold tracking-tight font-aeonik-medium">Messages</h2>
       </div>
 
-      <Tabs defaultValue="messages">
-        <TabsList>
-          <TabsTrigger value="messages">Messages</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-        </TabsList>
-        <TabsContent value="messages" className="space-y-4 pt-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <div className="flex justify-between">
-                <div>
-                  <CardTitle>Sarah Johnson</CardTitle>
-                  <CardDescription>Wedding Photography • March 15, 2025</CardDescription>
-                </div>
-                <Badge>New</Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p>
-                Hi there! I wanted to discuss some details about our wedding photography package. Do you have time for a
-                quick call tomorrow?
-              </p>
-            </CardContent>
-            <CardFooter className="pt-0">
-              <Button variant="outline" className="w-full">
-                Reply
-              </Button>
-            </CardFooter>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <div className="flex justify-between">
-                <div>
-                  <CardTitle>Mark Davis</CardTitle>
-                  <CardDescription>Corporate Event • April 10, 2025</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p>
-                Thanks for confirming the details. I've sent over the contract for you to review. Let me know if you
-                have any questions!
-              </p>
-            </CardContent>
-            <CardFooter className="pt-0">
-              <Button variant="outline" className="w-full">
-                Reply
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-        <TabsContent value="notifications" className="space-y-4 pt-4">
-          <Card>
-            <CardHeader className="pb-2 flex flex-row items-center">
-              <div className="mr-2 bg-primary/10 p-2 rounded-full">
-                <Bell className="h-4 w-4 text-primary" />
-              </div>
+      <div className="space-y-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex justify-between">
               <div>
-                <CardTitle className="text-base">New booking request</CardTitle>
-                <CardDescription>Lisa Thompson • Birthday Party</CardDescription>
+                <CardTitle>Ashwin</CardTitle>
+                <CardDescription>Wedding Photography • March 15, 2025</CardDescription>
               </div>
-              <Badge className="ml-auto">New</Badge>
-            </CardHeader>
-            <CardContent>
-              <p>You have a new booking request for a birthday party on May 22, 2025.</p>
-            </CardContent>
-            <CardFooter className="pt-0 flex gap-2">
-              <Button variant="outline" className="w-full">
-                Decline
-              </Button>
-              <Button className="w-full">Accept</Button>
-            </CardFooter>
-          </Card>
+              <Badge>New</Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p>
+              Hi there! I wanted to discuss some details about our wedding photography package. Do you have time for a
+              quick call tomorrow?
+            </p>
+          </CardContent>
+          <CardFooter className="pt-0">
+            <Button variant="outline" className="w-full">
+              Reply
+            </Button>
+          </CardFooter>
+        </Card>
 
-          <Card>
-            <CardHeader className="pb-2 flex flex-row items-center">
-              <div className="mr-2 bg-primary/10 p-2 rounded-full">
-                <CreditCard className="h-4 w-4 text-primary" />
-              </div>
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex justify-between">
               <div>
-                <CardTitle className="text-base">Payment received</CardTitle>
-                <CardDescription>Sarah Johnson • Wedding Photography</CardDescription>
+                <CardTitle>Ameer</CardTitle>
+                <CardDescription>Corporate Event • April 10, 2025</CardDescription>
               </div>
-            </CardHeader>
-            <CardContent>
-              <p>You've received a deposit payment of ₹500 for the Johnson & Smith Wedding.</p>
-            </CardContent>
-            <CardFooter className="pt-0">
-              <Button variant="outline" className="w-full">
-                View Details
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p>
+              Thanks for confirming the details. I've sent over the contract for you to review. Let me know if you
+              have any questions!
+            </p>
+          </CardContent>
+          <CardFooter className="pt-0">
+            <Button variant="outline" className="w-full">
+              Reply
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
     </div>
   )
 }
 
 function Payment() {
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row gap-4 md:items-center justify-between">
-        <h2 className="text-2xl font-bold tracking-tight font-aeonik-medium">Payment Overview</h2>
-        <Button className="font-aeonik">Withdraw Funds</Button>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardDescription>Available Balance</CardDescription>
-            <CardTitle className="text-3xl">₹2,450.00</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardDescription>Pending</CardDescription>
-            <CardTitle className="text-3xl">₹1,200.00</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardDescription>Total Earnings (2025)</CardDescription>
-            <CardTitle className="text-3xl">₹8,750.00</CardTitle>
-          </CardHeader>
-        </Card>
-      </div>
-
-      <h3 className="text-xl font-semibold mt-8">Recent Transactions</h3>
-      <Card>
-        <CardContent className="p-0">
-          <div className="rounded-md border">
-            <div className="grid grid-cols-5 p-4 font-medium">
-              <div>Client</div>
-              <div>Event</div>
-              <div>Date</div>
-              <div>Amount</div>
-              <div>Status</div>
-            </div>
-            <Separator />
-            {[
-              {
-                client: "Sarah Johnson",
-                event: "Wedding Photography",
-                date: "Feb 28, 2025",
-                amount: "$500.00",
-                status: "Paid",
-              },
-              {
-                client: "Mark Davis",
-                event: "Corporate Event",
-                date: "Feb 15, 2025",
-                amount: "$750.00",
-                status: "Paid",
-              },
-              {
-                client: "Lisa Thompson",
-                event: "Birthday Party",
-                date: "Jan 30, 2025",
-                amount: "$300.00",
-                status: "Pending",
-              },
-              {
-                client: "Robert Wilson",
-                event: "Product Launch",
-                date: "Jan 22, 2025",
-                amount: "$1,200.00",
-                status: "Paid",
-              },
-              {
-                client: "Emily Clark",
-                event: "Family Portraits",
-                date: "Jan 10, 2025",
-                amount: "$250.00",
-                status: "Paid",
-              },
-            ].map((transaction, i) => (
-              <div key={i} className="grid grid-cols-5 p-4 hover:bg-muted/50">
-                <div>{transaction.client}</div>
-                <div>{transaction.event}</div>
-                <div>{transaction.date}</div>
-                <div>{transaction.amount}</div>
-                <div>
-                  <Badge variant={transaction.status === "Paid" ? "default" : "outline"}>{transaction.status}</Badge>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+    <div className="flex flex-col items-center justify-center h-[70vh] space-y-4">
+      <CreditCard className="h-16 w-16 text-[#f08b8b] animate-pulse" />
+      <h2 className="text-2xl font-bold text-gray-900">Payment Integration Coming Soon</h2>
+      <p className="text-gray-600 text-center max-w-md">
+        We're working on integrating payment solutions to provide you with seamless transaction capabilities.
+      </p>
     </div>
-  )
+  );
 }
 
 function ProfileSettings() {
